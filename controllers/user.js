@@ -1,6 +1,6 @@
 const bcrypt = require('bcryptjs');
 const User = require('../models/User');
-const { generateAccessToken } = require('../utils/auth');
+const { signToken, generateAccessToken, verifyJwt } = require('../utils/auth');
 const catchAsync = require('../utils/catchAsync');
 const httpStatus = require('http-status');
 const APIError = require('../utils/errors');
@@ -20,12 +20,37 @@ const signIn = catchAsync(async (req, res) => {
   const user = await User.findOne({ where: { username } });
 
   if (user && (await bcrypt.compare(password, user.password))) {
-    const payload = { id: user.id, username };
-    const accessToken = generateAccessToken(payload);
-    res.send({accessToken});
+    delete user.password;
+    const { accessToken, refreshToken } = await signToken(user.toJSON());
+
+    res.send({accessToken, refreshToken});
   } else {
-    throw new APIError({status: httpStatus.UNAUTHORIZED, message: httpStatus['401_MESSAGE']});
+    throw new APIError({status: httpStatus.UNAUTHORIZED, message: 'Invalid username or password'});
   }
+});
+
+const refreshAccessToken = catchAsync(async (req,res,next) => {
+  // Get the refresh token from cookie
+  const {refreshToken} = req.body;
+
+  // Validate the Refresh token
+  const decoded = verifyJwt(refreshToken);
+  const message = 'Could not refresh access token';
+  if (!decoded) {
+    throw new APIError({message, status: 403});
+  }
+
+  // Check if the user exist
+  const user = await User.findByPk(decoded.id);
+
+  if (!user) {
+    throw new APIError({message, status: 403});
+  }
+
+  // Sign new access token
+  const accessToken = generateAccessToken(user.toJSON());
+
+  res.status(200).json({accessToken});
 });
 
 const getProfile = catchAsync(async (req,res,next) => {
@@ -39,5 +64,6 @@ const getProfile = catchAsync(async (req,res,next) => {
 module.exports = {
   signUp,
   signIn,
-  getProfile
+  getProfile,
+  refreshAccessToken,
 };

@@ -9,7 +9,7 @@ const createTask = {
 
 const updateTask = {
   body: Joi.object().keys({
-    title: Joi.string().required().min(1),
+    title: Joi.string().min(1),
     content: Joi.string(),
     status: Joi.string().valid('TODO', 'DOING', 'CANCEL', 'DONE'),
   }),
