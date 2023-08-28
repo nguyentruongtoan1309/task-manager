@@ -32,7 +32,7 @@ const updateTask = catchAsync(async (req,res) => {
   if (!result.length) {
     throw new APIError({message:'Task not found', status: httpStatus.NOT_FOUND});
   } else {
-    res.send('Update task successful');
+    res.send({message: 'Update task successful'});
   }
 });
 

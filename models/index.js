@@ -12,7 +12,7 @@ async function dbInitialize() {
   try {
     await ensureDbExists();
     await sequelize.authenticate();
-    logger.debug('Connection MSSQL successfully.');
+    logger.info('Connection MSSQL successfully.');
     await sequelize.sync();
   } catch (error) {
     logger.error('Unable to connect to the database:', error);
